@@ -7,7 +7,7 @@ description: "用于 ipynb 转 py、ipynb to py、notebook 转 Python。固定�
 
 用户说“ipynb 转 py”时，默认使用 [scripts/convert_notebook.py](scripts/convert_notebook.py)。该脚本调用公共 `jupytext.writes()` 的 `py:hydrogen` 格式，并核对输出；不要让 AI 重新生成原代码，也不要换回其他导出器或旧的标准库渲染方案。
 
-只传入原 notebook 路径：`A.ipynb → A.py`、`A.part.ipynb → A.part.py`，目录和文件名主体不变。这是内容转换，原 `.ipynb` 保留，不对原文件执行重命名。每个 notebook 仅新增一个最终 `.py`，不另存报告、图片、脚本副本或中间 notebook。
+只传入原 notebook 路径：`A.ipynb → A.py`、`A.part.ipynb → A.part.py`，目录和文件名主体不变。这是内容转换，原 `.ipynb` 保留，不对原文件执行重命名。每个 notebook 仅新增一个最终 `.py`，不另存报告、图片、脚本副本或中间 notebook。首次准备环境也不得向 notebook 所在目录写入安装包、Conda 缓存、安装日志或环境文件；目录中原有的其他文件保持原样。
 
 ## 转换规则
 
@@ -21,12 +21,12 @@ description: "用于 ipynb 转 py、ipynb to py、notebook 转 Python。固定�
 
 所有平台统一使用名为 `ipynb_py_conda` 的 Conda 环境；不改名或删除其他环境，不回退到 base、venv、uv 或系统 Python。按下述流程自动准备或复用；若用户/项目明确限制安装，遵守该限制，已经授权的操作不重复询问。
 
-1. 找到已有 Conda 的真实可执行路径，运行 `"<CONDA_EXE>" env list --json`（PowerShell 在命令前加 `&`），检查环境路径。不存在 Conda 时报告缺少 Conda，不自行下载独立软件。
+1. 找到已有 Conda 的真实可执行路径，运行 `"<CONDA_EXE>" env list --json`（PowerShell 在命令前加 `&`），检查环境路径。需要创建环境或补依赖时，再通过 `"<CONDA_EXE>" info --json` 核验 `root_prefix`、`envs_dirs`、`pkgs_dirs`，并核验实际临时目录；安装工作目录、环境、包缓存和临时文件位置必须在 notebook 所在目录及其子目录之外。安装命令在已确认的外部 Conda 根目录运行，不把安装输出重定向到 notebook 目录。现有配置若指向 notebook 目录，先报告位置并按用户授权处理，不能照常安装或暗中更改全局配置。不存在 Conda 时报告缺少 Conda，不自行下载独立软件。
 2. 没有 `ipynb_py_conda` 时，创建并安装转换依赖：Windows 使用 `& '<CONDA_EXE>' create --name ipynb_py_conda --override-channels -c conda-forge python=3.11 jupytext=1.16.7 --yes`；Linux/macOS 使用 `"<CONDA_EXE>" create --name ipynb_py_conda --override-channels -c conda-forge python=3.11 jupytext=1.16.7 --yes`。Jupytext 会带入 nbformat 等依赖，无需安装完整 Jupyter、IPython 或 Bash 来做转换。
 3. 已有环境直接复用，解析其实际 prefix：Windows 解释器为 `<PREFIX>/python.exe`，Linux/macOS 为 `<PREFIX>/bin/python`。不要猜测 Conda 安装目录；多个同名 prefix 无法消歧时先询问。使用这个绝对路径及 `-B -c "import sys, jupytext, nbformat; print(sys.executable); print(sys.version); print(jupytext.__version__); assert sys.version_info >= (3, 9)"` 检查解释器和依赖。已有可用的 Jupytext 不自动升级或降级，每次转换仍逐字符校验。
 4. 如果已有环境仅缺 Jupytext/nbformat，在同一已确认 prefix 安装：`"<CONDA_EXE>" install --prefix "<PREFIX>" --override-channels -c conda-forge jupytext=1.16.7 nbformat --yes`（PowerShell 前加 `&`），然后重新核验。已有 Python 低于 3.9 或依赖安装/求解失败时，报告问题，不静默重建环境、更改版本或改用另一个环境。
 
-初次安装 Skill、创建环境或补齐依赖可能产生安装器临时文件、环境文件及 Conda 包缓存；“无中间文件”适用于依赖就绪后的 notebook 转换，不能把安装过程描述成零文件。
+这里的“无中间文件”约束 notebook 所在目录：本次调用在该目录只新增同名 `.py`。`ipynb_py_conda` 环境及 Conda 安装缓存正常保留在 Conda 自己的外部目录，供以后复用，无需清理。不要把这个要求扩大为删除环境、清理 Conda 共享缓存或消除整个系统的安装记录。
 
 解析本 skill 目录及上述环境解释器的绝对路径。日常转换直接调用这个来源已核验的 Conda Python；不要使用 `conda run`，它会生成临时 `.bat`/`.sh` 启动脚本。`-B` 与转换器内的 `sys.dont_write_bytecode = True` 阻止依赖导入生成 `.pyc`。以下尖括号内容必须替换为真实路径：
 
@@ -69,6 +69,8 @@ Linux/macOS bash/zsh：
 ## 核验与交付
 
 检查退出码及 JSON：`format` 为 `py:hydrogen`、`line_endings` 为 `LF`、`input_unchanged` 和 `entire_output_verified` 为 `true`，核对单元数量和源/目标 SHA-256。脚本按原单元顺序、已知正文长度检查每个字符，正文中的已有 `# %%` 不作为校验分割依据；最后核对全部输出已被解释，防止夹带输出或附件。
+
+执行前后在内存中核对 notebook 目录的新增项，成功时仅应新增同名 `.py`；不要为此另存目录清单或校验日志，也不要删除目录中原有的其他文件。
 
 如果 Jupytext 对正文产生 LF 规范化之外的改动，写入前报错停止；不能静默纠错、忽略差异或自动换渲染方案。非 CR/LF 的分隔字符（如换页符、垂直制表符、U+2028）、特殊 Unicode 缩进以及 magic 行的 `# escape` 指令可能触发此保护，应报告具体单元，不宣称转换成功。
 

@@ -11,7 +11,7 @@
 
 适用于 Windows、Linux、macOS。固定使用 Conda 环境 `ipynb_py_conda`，不存在则创建 Python 3.11 / Jupytext 1.16.7 环境，已存在则复用并核验 Python 3.9+ 和 Jupytext；Bash/magic 的运行另外需要 IPython/Jupyter 及对应的 shell。
 
-每个 notebook 只生成同目录同名 `.py`，例如 `A.ipynb → A.py`，原 notebook 保持只读。转换在内存中完成，报告只输出终端；初次安装 Skill、环境和依赖仍会产生安装器临时文件、环境文件及包缓存。
+每个 notebook 只生成同目录同名 `.py`，例如 `A.ipynb → A.py`，原 notebook 保持只读。转换在内存中完成，报告只输出终端。首次准备环境也不得在 notebook 所在目录留下安装包、缓存、日志或环境文件；Conda 环境和安装缓存正常保留在 Conda 自己的外部目录，供以后复用，无需清理。目录中原有的其他文件保持原样。
 
 ## 2. 文件树与说明
 
@@ -36,7 +36,7 @@ skill-ipynbtopy/
 **让 Codex 安装：** 将下面的请求交给 Codex：
 
 ```text
-请从 https://github.com/LouChen-med/skill-ipynbtopy 的 ipynb-to-py-verbatim 子目录安装 Codex Skill，让“ipynb 转 py”可直接触发；统一使用 ipynb_py_conda，缺失则创建并安装依赖、已有则复用，将 A.ipynb 转为同目录 A.py，保留原文件、拒绝覆盖，转换不执行用户代码且不产生中间文件。
+请从 https://github.com/LouChen-med/skill-ipynbtopy 的 ipynb-to-py-verbatim 子目录安装 Codex Skill，让“ipynb 转 py”可直接触发；统一使用 ipynb_py_conda，缺失则创建并安装依赖、已有则复用，将 A.ipynb 转为同目录 A.py，保留原文件、拒绝覆盖、不执行用户代码，notebook 目录只新增这个 .py，Conda 环境和缓存保留在 Conda 自己的目录。
 ```
 
 **手动安装：** 只复制完整的 `ipynb-to-py-verbatim` 文件夹到 Codex 的用户 skills 目录。当前通用位置为 Linux/macOS 的 `~/.agents/skills/`，或 Windows PowerShell 的 `$HOME/.agents/skills/`。如果当前 Codex 已配置其他 skills 目录，使用该实例实际采用的位置。不要把整个仓库当成一个 skill，也不要重复安装同名副本。
