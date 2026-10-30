@@ -1,0 +1,7 @@
+interface:
+  display_name: "ipynb 转 py · Jupytext"
+  short_description: "使用 Hydrogen 保留代码、注释与 Bash，Markdown 转注释并丢弃输出图片"
+  default_prompt: "使用 $ipynb-to-py-verbatim 通过 Jupytext py:hydrogen 转换 notebook，统一 LF，保留原代码、原注释和 Bash/magic，Markdown 转注释，丢弃输出图片，不执行或修复用户代码。"
+
+policy:
+  allow_implicit_invocation: true
