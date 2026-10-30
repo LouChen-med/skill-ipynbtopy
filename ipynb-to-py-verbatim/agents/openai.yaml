@@ -1,7 +1,7 @@
 interface:
   display_name: "ipynb 转 py · Jupytext"
   short_description: "固定 Conda 环境，将 notebook 转为同目录同名 py，保留代码且转换无中间文件"
-  default_prompt: "使用 $ipynb-to-py-verbatim，创建或复用 ipynb_py_conda 环境，以 Jupytext py:hydrogen 将 A.ipynb 转为同目录 A.py，保留代码、注释和 magic，Markdown/raw 转注释；原文件只读，拒绝覆盖，转换不产生中间文件。"
+  default_prompt: "使用 $ipynb-to-py-verbatim，创建或复用 ipynb_py_conda 环境，以 Jupytext py:hydrogen 将 A.ipynb 转为同目录 A.py，保留代码、注释和 magic，Markdown/raw 转注释；转换后由 AI 重新只读读取原 ipynb 和生成的 py，逐单元核对全部代码、注释和单元转换。原文件只读，拒绝覆盖，不执行或修改用户代码，不产生中间文件。"
 
 policy:
   allow_implicit_invocation: true
