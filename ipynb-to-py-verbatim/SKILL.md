@@ -1,6 +1,6 @@
 ---
 name: ipynb-to-py-verbatim
-description: "用于 ipynb 转 py、ipynb to py、notebook 转 Python。固定使用 Conda 环境 ipynb_py_conda（缺失则创建，已有则复用），以 Jupytext py:hydrogen 输出同目录同名的 # %% 脚本；保留代码、注释和 magic，Markdown/raw 转注释，转换无中间文件。支持 Windows、Linux、macOS。"
+description: "用于 ipynb 转 py、ipynb to py、notebook 转 Python，兼容 Codex 和 DeepSeek Harness。固定使用 Conda 环境 ipynb_py_conda（缺失则创建，已有则复用），以 Jupytext py:hydrogen 输出同目录同名的 # %% 脚本；保留代码、注释和 magic，Markdown/raw 转注释，转换无中间文件。支持 Windows、Linux、macOS。"
 ---
 
 # 使用 Jupytext Hydrogen 转换 ipynb 为 py
@@ -8,6 +8,15 @@ description: "用于 ipynb 转 py、ipynb to py、notebook 转 Python。固定�
 用户说“ipynb 转 py”时，默认使用 [scripts/convert_notebook.py](scripts/convert_notebook.py)。该脚本调用公共 `jupytext.writes()` 的 `py:hydrogen` 格式，并核对输出；不要让 AI 重新生成原代码，也不要换回其他导出器或旧的标准库渲染方案。
 
 只传入原 notebook 路径：`A.ipynb → A.py`、`A.part.ipynb → A.part.py`，目录和文件名主体不变。这是内容转换，原 `.ipynb` 保留，不对原文件执行重命名。每个 notebook 仅新增一个最终 `.py`，不另存报告、图片、脚本副本或中间 notebook。首次准备环境也不得向 notebook 所在目录写入安装包、Conda 缓存、安装日志或环境文件；目录中原有的其他文件保持原样。
+
+## Codex 与 DeepSeek Harness
+
+- 两者共用本文件和同一个转换器；`agents/openai.yaml` 提供 Codex 界面信息与调用策略，不是 DeepSeek Harness 的配置。不要为另一个运行器复制或改写转换逻辑。
+- DeepSeek Harness 安装完整的 `ipynb-to-py-verbatim` 文件夹到实际技能根目录的直接下一级：默认用户根为 `~/.dsh/skills`，共享根为 `~/.agents/skills`，分别可由 `DSH_HOME`、`DSH_AGENTS_HOME` 改变其上级目录。也支持项目 `.dsh/skills`、`.agents/skills` 或已配置的自定义根。先检查当前实例的实际配置及同名技能，避免重复安装；不要把整个仓库再套一层放入 skills，它不会递归发现嵌套技能。
+- `$CODEX_HOME/skills` 不在 DeepSeek Harness 默认扫描范围。同名技能的项目目录优先于自定义目录，自定义目录优先于用户 `.dsh`，用户 `.dsh` 优先于共享 `.agents`；安装后核对实际加载路径，避免旧副本遮蔽新版或在多个可见根目录中重复安装。
+- 自然语言说“ipynb 转 py”；需要显式选择时，DeepSeek Harness 用 `/ipynb-to-py-verbatim`，Codex 用 `$ipynb-to-py-verbatim`。保留 frontmatter 的 `name`、`description`；默认允许用户和模型调用，无需额外设置运行器专属开关。
+- 在 DeepSeek Harness 中，从加载结果 `resourceBase` / `<skill_resources>` 的 `Base directory` 解析 `scripts/convert_notebook.py` 的绝对路径，不以 notebook 所在目录或当前工作目录为基准。通过当前运行器可用的终端工具执行下述命令，遵守它已有的权限边界。
+- 环境检查、创建和复用由运行器按下述流程完成；转换脚本本身不安装依赖。若当前终端处于 Linux/容器/远程环境，Skill、Conda、Python 和 notebook 路径必须在同一执行环境中可访问，不能混用宿主 Windows 路径。
 
 ## 转换规则
 

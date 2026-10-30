@@ -1,0 +1,11 @@
+# Local test artifacts
+/test/
+
+# Local notebook and its converted output
+/lc_basis_analysis.ipynb
+/lc_basis_analysis.py
+
+# Python and Jupyter caches
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
