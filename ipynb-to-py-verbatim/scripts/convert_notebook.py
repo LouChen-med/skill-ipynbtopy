@@ -7,6 +7,7 @@ import sys
 sys.dont_write_bytecode = True
 
 import argparse
+import ast
 import collections
 import hashlib
 import json
@@ -139,6 +140,26 @@ def _sha256(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def _syntax_errors(cells):
+    """Report source syntax errors without treating IPython/shell cells as Python."""
+    errors = []
+    for index, cell in enumerate(cells, 1):
+        if cell["cell_type"] != "code":
+            continue
+        source = source_text(cell)
+        if any(line.lstrip().startswith(("%", "!")) for line in source.splitlines()):
+            continue
+        try:
+            ast.parse(source)
+        except SyntaxError as error:
+            errors.append({
+                "cell": index,
+                "line": error.lineno,
+                "message": error.msg,
+            })
+    return errors
+
+
 def _warnings(notebook, cells):
     warnings = []
     metadata = notebook.get("metadata", {})
@@ -148,8 +169,19 @@ def _warnings(notebook, cells):
     if any(line.lstrip().startswith(("%", "!"))
            for cell in cells if cell["cell_type"] == "code"
            for line in source_text(cell).splitlines()):
-        warnings.append("Magic/shell syntax was preserved. Run by cell in IPython/Jupyter; "
+        warnings.append("IPython magic/shell syntax was preserved and is not valid plain Python; "
+                        "static Python checks will report errors. Run by cell in IPython/Jupyter; "
                         "%%bash requires a working Bash executable, and ! uses the host shell.")
+    syntax_errors = _syntax_errors(cells)
+    if syntax_errors:
+        details = "; ".join(
+            "cell {} line {}: {}".format(
+                error["cell"], error["line"], error["message"])
+            for error in syntax_errors[:10]
+        )
+        if len(syntax_errors) > 10:
+            details += "; {} more".format(len(syntax_errors) - 10)
+        warnings.append("Python syntax errors in source code cells were preserved: " + details)
     if any(line.startswith("# %%") for cell in cells
            for line in source_text(cell).splitlines()):
         warnings.append("Existing percent markers were retained; editor cell boundaries may differ.")
@@ -182,6 +214,7 @@ def convert_notebook(input_path, output_path=None):
     counts = collections.Counter(cell["cell_type"] for cell in cells)
     outputs = [item for cell in cells if isinstance(cell.get("outputs"), list)
                for item in cell["outputs"]]
+    syntax_errors = _syntax_errors(cells)
     report = {
         "converter": "jupytext",
         "format": "py:hydrogen",
@@ -209,6 +242,7 @@ def convert_notebook(input_path, output_path=None):
         ),
         "discarded_attachments": sum(len(cell["attachments"]) for cell in cells
                                      if isinstance(cell.get("attachments"), dict)),
+        "preserved_syntax_errors": syntax_errors,
         "warnings": _warnings(notebook, cells),
     }
     if _sha256(input_path.read_bytes()) != original_hash:

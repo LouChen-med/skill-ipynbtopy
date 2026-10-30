@@ -1,9 +1,10 @@
 # Local test artifacts
 /test/
+/tmp/
 
-# Local notebook and its converted output
-/lc_basis_analysis.ipynb
-/lc_basis_analysis.py
+# Local root-level notebooks and their converted outputs
+/*.ipynb
+/*.py
 
 # Python and Jupyter caches
 __pycache__/

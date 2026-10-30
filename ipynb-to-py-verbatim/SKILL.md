@@ -73,6 +73,7 @@ Linux/macOS bash/zsh：
 ## Bash 与 magic 的运行方式
 
 - 导出文件中含 `!`、`%` 或 `%%bash` 时，使用 IPython/Jupyter kernel 按原单元运行，例如 VS Code 的 `# %%` 单元。普通 `python output.py` 不能直接解释这些语法；也不要把含 `%%bash` 的整份脚本一次交给 IPython 当成一个单元。
+- VS Code/Pylance 等普通 Python 静态检查会把这些保留下来的 magic/shell 行标为语法错误；这是保留原语法的预期结果，不代表转换内容不一致或转换失败。
 - `!命令` 使用宿主系统的 shell，Windows 中并不自动等同于 Bash；`%%bash` 才明确调用 Bash。原命令依赖的程序仍须在执行环境可用。
 - 执行 `%%bash` 前确认现有 Bash 实际可运行。Windows 的 `bash.exe` 可能是没有可用发行版的 WSL 启动器；已有 Git Bash 可作为实际解释器。可在初始化 IPython 的配置中，用官方 `ScriptMagics.script_paths` 将 `bash` 映射到已确认的 Bash 绝对路径。不要为此改写用户单元、修改全局 PATH 或自动安装 WSL/Git Bash。
 - 只有用户请求运行时才执行转换后的代码。验证转换工具时只运行专门构造的无害测试单元，不执行用户分析 notebook。
@@ -81,7 +82,7 @@ Linux/macOS bash/zsh：
 
 完成转换器的程序校验后，AI 必须执行下述双文件回读复核，再交付结果；仅有成功退出码、哈希或 JSON 报告不能代替 AI 查看实际内容。
 
-检查退出码及 JSON：`format` 为 `py:hydrogen`、`line_endings` 为 `LF`、`input_unchanged` 和 `entire_output_verified` 为 `true`，核对单元数量和源/目标 SHA-256。脚本按原单元顺序、已知正文长度检查每个字符，正文中的已有 `# %%` 不作为校验分割依据；最后核对全部输出已被解释，防止夹带输出或附件。
+检查退出码及 JSON：`format` 为 `py:hydrogen`、`line_endings` 为 `LF`、`input_unchanged` 和 `entire_output_verified` 为 `true`，核对单元数量和源/目标 SHA-256。脚本按原单元顺序、已知正文长度检查每个字符，正文中的已有 `# %%` 不作为校验分割依据；最后核对全部输出已被解释，防止夹带输出或附件。`preserved_syntax_errors` 列出原代码单元中非 magic/shell 的 Python 语法错误；非空表示这些源错误按规则保留，不是转换失败。
 
 执行前后在内存中核对 notebook 目录的新增项，成功时仅应新增同名 `.py`；不要为此另存目录清单或校验日志，也不要删除目录中原有的其他文件。
 
