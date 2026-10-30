@@ -9,7 +9,9 @@
 - 保留 `%`、`!`、`%%bash` 原语法，丢弃执行输出、图片二进制和附件；Markdown 图片引用文字仍保留为注释。
 - 原 notebook 只读，不执行、纠错或格式化用户代码；输出文件已存在时拒绝覆盖。
 
-适用于 Windows、Linux、macOS。需要 Python 3.9+ 和已有的 Jupytext；Bash/magic 的运行另外需要 IPython/Jupyter 及对应的 shell。
+适用于 Windows、Linux、macOS。固定使用 Conda 环境 `ipynb_py_conda`，不存在则创建 Python 3.11 / Jupytext 1.16.7 环境，已存在则复用并核验 Python 3.9+ 和 Jupytext；Bash/magic 的运行另外需要 IPython/Jupyter 及对应的 shell。
+
+每个 notebook 只生成同目录同名 `.py`，例如 `A.ipynb → A.py`，原 notebook 保持只读。转换在内存中完成，报告只输出终端；初次安装 Skill、环境和依赖仍会产生安装器临时文件、环境文件及包缓存。
 
 ## 2. 文件树与说明
 
@@ -34,7 +36,7 @@ skill-ipynbtopy/
 **让 Codex 安装：** 将下面的请求交给 Codex：
 
 ```text
-使用 $skill-installer，从 https://github.com/LouChen-med/skill-ipynbtopy/tree/main/ipynb-to-py-verbatim 安装这个 skill。
+请从 https://github.com/LouChen-med/skill-ipynbtopy 的 ipynb-to-py-verbatim 子目录安装 Codex Skill，让“ipynb 转 py”可直接触发；统一使用 ipynb_py_conda，缺失则创建并安装依赖、已有则复用，将 A.ipynb 转为同目录 A.py，保留原文件、拒绝覆盖，转换不执行用户代码且不产生中间文件。
 ```
 
 **手动安装：** 只复制完整的 `ipynb-to-py-verbatim` 文件夹到 Codex 的用户 skills 目录。当前通用位置为 Linux/macOS 的 `~/.agents/skills/`，或 Windows PowerShell 的 `$HOME/.agents/skills/`。如果当前 Codex 已配置其他 skills 目录，使用该实例实际采用的位置。不要把整个仓库当成一个 skill，也不要重复安装同名副本。
@@ -43,29 +45,27 @@ skill-ipynbtopy/
 
 ## 4. 代码运行顺序
 
-1. 确认已有 Python 环境及其中的 Jupytext。若需要自行安装依赖，先按当前环境管理和授权规则操作。Conda 命令模板如下，替换实际 Conda 路径与已有环境名；此步骤无需为转换安装用户分析代码的依赖。
+1. 按 [SKILL.md](ipynb-to-py-verbatim/SKILL.md) 查询、创建或复用唯一指定环境 `ipynb_py_conda`。新建命令如下，Windows PowerShell 在命令前加 `&`：
 
    ```sh
-   "<CONDA_EXE>" install -n "<ENV_NAME>" -c conda-forge jupytext
+   "<CONDA_EXE>" create --name ipynb_py_conda --override-channels -c conda-forge python=3.11 jupytext=1.16.7 --yes
    ```
 
-   Windows PowerShell 在上述命令前加调用运算符 `&`。
+   已有环境不重建；依赖缺失时补齐同一环境。无需安装用户分析代码的依赖。
 
-2. 确认源 `.ipynb` 和尚不存在的目标 `.py`，目标父目录必须存在。通过已确认的解释器运行脚本；所有尖括号内容均须替换为实际绝对路径。
+2. 从 Conda 环境清单确认解释器的绝对路径，直接运行它；不要用会生成临时启动脚本的 `conda run`。只传输入路径，目标自动为同目录同名的 `.py`，已有目标（含悬空符号链接）拒绝覆盖。
 
    Windows PowerShell：
 
    ```powershell
-   & '<PYTHON_EXE>' -B '<SKILL_DIR>/scripts/convert_notebook.py' '<SOURCE.ipynb>' '<NEW_OUTPUT.py>'
+   & '<IPYNB_PY_CONDA_PYTHON>' -B '<SKILL_DIR>/scripts/convert_notebook.py' '<SOURCE.ipynb>'
    ```
 
    Linux/macOS bash/zsh：
 
    ```sh
-   "<PYTHON_EXE>" -B "<SKILL_DIR>/scripts/convert_notebook.py" "<SOURCE.ipynb>" "<NEW_OUTPUT.py>"
+   "<IPYNB_PY_CONDA_PYTHON>" -B "<SKILL_DIR>/scripts/convert_notebook.py" "<SOURCE.ipynb>"
    ```
-
-   使用 Conda 执行时，完整模板见 [SKILL.md](ipynb-to-py-verbatim/SKILL.md)。
 
 3. 检查退出码和 JSON 报告：`format` 应为 `py:hydrogen`，`line_endings` 应为 `LF`，`input_unchanged` 与 `entire_output_verified` 应为 `true`。脚本同时报告单元数及源/目标 SHA-256；正文出现 LF 规范化以外的变化时会停止写入。
 

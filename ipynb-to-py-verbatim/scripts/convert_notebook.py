@@ -1,12 +1,16 @@
 # %% Imports and fixed Jupytext format
-"""Export inputs with Jupytext py:hydrogen; preserve source except CRLF/CR to LF."""
+"""Export A.ipynb to adjacent A.py with Jupytext py:hydrogen, without temporary files."""
+
+import sys
+
+# Disable dependency bytecode caches even when the caller omitted Python's -B flag.
+sys.dont_write_bytecode = True
 
 import argparse
 import collections
 import hashlib
 import json
 import re
-import sys
 from pathlib import Path
 
 
@@ -16,6 +20,7 @@ HYDROGEN_FORMAT = {
     "comment_magics": False,
     "cell_metadata_filter": "-all",
     "notebook_metadata_filter": "-all",
+    "root_level_metadata_as_raw_cell": False,
 }
 
 
@@ -24,8 +29,8 @@ def _jupytext():
         import jupytext
         from nbformat import NotebookNode
     except ImportError as error:
-        raise ValueError("Jupytext is required in the selected Python environment; "
-                         "check existing environments before installing dependencies.") from error
+        raise ValueError("Jupytext and nbformat are required in Conda environment "
+                         "ipynb_py_conda; follow the skill's environment setup.") from error
     return jupytext, NotebookNode
 
 
@@ -151,18 +156,20 @@ def _warnings(notebook, cells):
     return warnings
 
 
-def convert_notebook(input_path, output_path):
-    """Write a new .py file; never overwrite input or an existing output."""
-    input_path = Path(input_path).resolve()
-    output_path = Path(output_path).resolve()
-    if input_path == output_path:
-        raise ValueError("Input and output paths must differ.")
+def convert_notebook(input_path, output_path=None):
+    """Create only the adjacent same-stem .py, preserving the caller's input filename."""
+    # Do not resolve leaf symlinks: preserve the supplied notebook name and reject
+    # existing output links, including dangling ones, instead of following them.
+    input_path = Path(input_path).absolute()
     if input_path.suffix.lower() != ".ipynb":
         raise ValueError("Input filename must have the .ipynb extension.")
-    if output_path.suffix.lower() != ".py":
-        raise ValueError("Output filename must have the .py extension.")
-    if output_path.exists():
-        raise FileExistsError("Output already exists; select a new output filename.")
+    expected_output = input_path.with_suffix(".py")
+    if output_path is not None and Path(output_path).absolute() != expected_output:
+        raise ValueError("Output must be the adjacent same-name .py: {}".format(expected_output))
+    output_path = expected_output
+    if output_path.is_symlink() or output_path.exists():
+        raise FileExistsError("Output already exists (including symlinks); refusing to overwrite: "
+                              "{}".format(output_path))
     if not output_path.parent.is_dir():
         raise FileNotFoundError("Output parent directory does not exist.")
     original = input_path.read_bytes()
@@ -217,7 +224,8 @@ def convert_notebook(input_path, output_path):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input", type=Path, help="Source .ipynb (read only)")
-    parser.add_argument("output", type=Path, help="New .py file in an existing directory")
+    parser.add_argument("output", type=Path, nargs="?",
+                        help="Optional compatibility argument; must equal input.with_suffix('.py')")
     args = parser.parse_args(argv)
     try:
         report = convert_notebook(args.input, args.output)
