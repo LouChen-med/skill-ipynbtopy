@@ -39,8 +39,10 @@ Windows PowerShell：
 Linux/macOS bash/zsh：
 
 ```sh
-"<IPYNB_PY_CONDA_PYTHON>" -B "<SKILL_DIR>/scripts/convert_notebook.py" "<SOURCE.ipynb>"
+'<IPYNB_PY_CONDA_PYTHON>' -B '<SKILL_DIR>/scripts/convert_notebook.py' '<SOURCE.ipynb>'
 ```
+
+替换真实路径时按当前 shell 做字面量安全引用，不把任意文件名原样拼进命令。POSIX shell 可用 `shlex.quote()` 生成每个参数的安全引用，或使用参数数组且 `shell=False`；路径中的单引号也须正确转义，不能只套双引号后让 `$()`、反引号等被解释。输入须为普通 notebook 文件或指向普通文件的符号链接，FIFO、设备和目录会被拒绝。
 
 兼容旧调用的第二个路径参数只接受与自动推导结果相同的路径；不得指定其他名称或目录。JSON 校验摘要只输出到 stdout，不重定向到文件；不要生成临时测试脚本、日志、缓存、临时 notebook、备份或图片。转换完全在内存中完成，只以独占创建模式写最终 `.py`。磁盘写入失败或进程被中断时可能留下不完整的最终文件；应报告失败并保留现场，不宣称成功或自动删除/覆盖重试。
 

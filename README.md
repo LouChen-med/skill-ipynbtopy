@@ -64,8 +64,10 @@ skill-ipynbtopy/
    Linux/macOS bash/zsh：
 
    ```sh
-   "<IPYNB_PY_CONDA_PYTHON>" -B "<SKILL_DIR>/scripts/convert_notebook.py" "<SOURCE.ipynb>"
+   '<IPYNB_PY_CONDA_PYTHON>' -B '<SKILL_DIR>/scripts/convert_notebook.py' '<SOURCE.ipynb>'
    ```
+
+   实际路径须按当前 shell 安全引用；含引号、美元符号或反引号的路径，参见 [SKILL.md](ipynb-to-py-verbatim/SKILL.md) 的参数引用规则。
 
 3. 检查退出码和 JSON 报告：`format` 应为 `py:hydrogen`，`line_endings` 应为 `LF`，`input_unchanged` 与 `entire_output_verified` 应为 `true`。脚本同时报告单元数及源/目标 SHA-256；正文出现 LF 规范化以外的变化时会停止写入。
 

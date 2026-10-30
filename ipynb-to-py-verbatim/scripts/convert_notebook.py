@@ -172,6 +172,8 @@ def convert_notebook(input_path, output_path=None):
                               "{}".format(output_path))
     if not output_path.parent.is_dir():
         raise FileNotFoundError("Output parent directory does not exist.")
+    if not input_path.is_file():
+        raise ValueError("Input must be an existing regular notebook file (or a symlink to one).")
     original = input_path.read_bytes()
     notebook = json.loads(original.decode("utf-8-sig"))
     cells = _cells(notebook)
