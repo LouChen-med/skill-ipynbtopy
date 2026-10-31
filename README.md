@@ -17,7 +17,7 @@
 
 ```text
 skill-ipynbtopy/
-├── .gitignore                        排除本地测试、示例 notebook/output 及缓存
+├── .gitignore                        排除本地测试、notebook/output 及缓存
 ├── README.md                         安装、阅读与运行说明
 ├── AGENTS.md                         项目架构、进展及代理协作约束
 └── ipynb-to-py-verbatim/              可直接安装的完整 skill
@@ -27,6 +27,8 @@ skill-ipynbtopy/
     └── scripts/
         └── convert_notebook.py       Jupytext 转换入口及逐单元内容校验
 ```
+
+以上展示版本控制中的主要文件。本地与 GitHub 的可安装源码目录统一为根目录下的 `ipynb-to-py-verbatim/`；本地测试目录、根目录 notebook 及其转换结果由 `.gitignore` 排除，不随仓库发布。
 
 ## 3. 使用与阅读顺序
 
@@ -81,4 +83,6 @@ Windows 的 `~` 对应当前用户主目录。DeepSeek Harness 的 `DSH_HOME`、
 
 3. 检查退出码和 JSON 报告：`format` 应为 `py:hydrogen`，`line_endings` 应为 `LF`，`input_unchanged` 与 `entire_output_verified` 应为 `true`。脚本同时报告单元数及源/目标 SHA-256；正文出现 LF 规范化以外的变化时会停止写入。
 
-4. 如需运行转换后的 Bash/magic，在 IPython/Jupyter kernel 中按 `# %%` 单元执行。`%%bash` 中间不加空格，并位于代码单元第一行；`!命令` 使用宿主系统 shell，`%%bash` 才明确调用 Bash。Windows 需确认实际 Bash 可用，必要时通过 IPython 的 `ScriptMagics.script_paths` 指定已有 Git Bash。含这些语法的文件不能直接交给普通 `python output.py`，也不应整份作为一个 IPython 单元执行。
+4. 程序校验通过后，AI 必须按 [SKILL.md](ipynb-to-py-verbatim/SKILL.md) 重新只读读取原 notebook 和磁盘上的 `.py`，覆盖全部单元及输出全文，核对代码、注释和单元转换；不执行或修改用户代码，不生成中间文件。未完整读完或发现差异时，如实报告复核未完成或未通过。
+
+5. 如需运行转换后的 Bash/magic，在 IPython/Jupyter kernel 中按 `# %%` 单元执行。`%%bash` 中间不加空格，并位于代码单元第一行；`!命令` 使用宿主系统 shell，`%%bash` 才明确调用 Bash。Windows 需确认实际 Bash 可用，必要时通过 IPython 的 `ScriptMagics.script_paths` 指定已有 Git Bash。含这些语法的文件不能直接交给普通 `python output.py`，也不应整份作为一个 IPython 单元执行。
