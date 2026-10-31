@@ -17,9 +17,10 @@
 
 ```text
 skill-ipynbtopy/
-├── .gitignore                        排除本地测试、notebook/output 及缓存
+├── .gitignore                        排除 tmp、本地测试、notebook/output 及缓存
 ├── README.md                         安装、阅读与运行说明
 ├── AGENTS.md                         项目架构、进展及代理协作约束
+├── tmp/                              本地边界测试与验证记录（Git 忽略）
 └── ipynb-to-py-verbatim/              可直接安装的完整 skill
     ├── SKILL.md                      触发条件、转换规则与操作流程
     ├── agents/
@@ -81,7 +82,7 @@ Windows 的 `~` 对应当前用户主目录。DeepSeek Harness 的 `DSH_HOME`、
 
    实际路径须按当前 shell 安全引用；含引号、美元符号或反引号的路径，参见 [SKILL.md](ipynb-to-py-verbatim/SKILL.md) 的参数引用规则。
 
-3. 检查退出码和 JSON 报告：`format` 应为 `py:hydrogen`，`line_endings` 应为 `LF`，`input_unchanged` 与 `entire_output_verified` 应为 `true`。脚本同时报告单元数及源/目标 SHA-256；正文出现 LF 规范化以外的变化时会停止写入。
+3. 检查退出码和 JSON 报告：`format` 应为 `py:hydrogen`，`line_endings` 应为 `LF`，`input_unchanged` 与 `entire_output_verified` 应为 `true`。脚本同时报告单元数及源/目标 SHA-256；正文出现 LF 规范化以外的变化时会停止写入。`preserved_syntax_errors` 列出原代码单元中非 magic/shell 的既有 Python 语法错误；非空表示错误按原样保留，不是转换失败。
 
 4. 程序校验通过后，AI 必须按 [SKILL.md](ipynb-to-py-verbatim/SKILL.md) 重新只读读取原 notebook 和磁盘上的 `.py`，覆盖全部单元及输出全文，核对代码、注释和单元转换；不执行或修改用户代码，不生成中间文件。未完整读完或发现差异时，如实报告复核未完成或未通过。
 
